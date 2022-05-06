@@ -15,6 +15,7 @@
                 totalPages: 1,
                 jobs: [],
                 retryingJobs: [],
+                forgettingJobs: [],
             };
         },
 
@@ -121,10 +122,39 @@
 
 
             /**
+             * Forget the given failed job.
+             */
+            forget(id) {
+                if (this.isForgetting(id)) {
+                    return;
+                }
+
+                this.forgettingJobs.push(id);
+
+                this.$http.delete(Horizon.basePath + '/api/jobs/failed/' + id)
+                    .then((response) => {
+                        setTimeout(() => {
+                            this.forgettingJobs = _.reject(this.forgettingJobs, job => job == id);
+                        }, 5000);
+                    }).catch(error => {
+                    this.forgettingJobs = _.reject(this.forgettingJobs, job => job == id);
+                });
+            },
+
+
+            /**
              * Determine if the given job is currently retrying.
              */
             isRetrying(id) {
                 return _.includes(this.retryingJobs, id);
+            },
+
+
+            /**
+             * Determine if the given job is currently being forgotten.
+             */
+            isForgetting(id) {
+                return _.includes(this.forgettingJobs, id);
             },
 
 
@@ -274,6 +304,11 @@
                         <a href="#" @click.prevent="retry(job.id)" v-if="!hasCompleted(job)">
                             <svg class="fill-primary" viewBox="0 0 20 20" style="width: 1.5rem; height: 1.5rem;" :class="{spin: isRetrying(job.id)}">
                                 <path d="M10 3v2a5 5 0 0 0-3.54 8.54l-1.41 1.41A7 7 0 0 1 10 3zm4.95 2.05A7 7 0 0 1 10 17v-2a5 5 0 0 0 3.54-8.54l1.41-1.41zM10 20l-4-4 4-4v8zm0-12V0l4 4-4 4z"/>
+                            </svg>
+                        </a>
+                        <a href="#" @click.prevent="forget(job.id)">
+                            <svg class="fill-primary" viewBox="0 0 20 20" style="width: 1.5rem; height: 1.5rem;" :class="{spin: isForgetting(job.id)}">
+                                <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm1.41-1.41A8 8 0 1 0 15.66 4.34 8 8 0 0 0 4.34 15.66zm9.9-8.49L11.41 10l2.83 2.83-1.41 1.41L10 11.41l-2.83 2.83-1.41-1.41L8.59 10 5.76 7.17l1.41-1.41L10 8.59l2.83-2.83 1.41 1.41z" />
                             </svg>
                         </a>
                     </td>
