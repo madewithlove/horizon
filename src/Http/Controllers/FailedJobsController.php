@@ -106,6 +106,17 @@ class FailedJobsController extends Controller
     }
 
     /**
+     * Forget a failed job.
+     *
+     * @param  string  $id
+     * @return void
+     */
+    public function forget($id)
+    {
+        $this->jobs->deleteFailed($id);
+    }
+
+    /**
      * Decode the given job.
      *
      * @param  object  $job
